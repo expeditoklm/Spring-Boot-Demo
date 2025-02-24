@@ -1,4 +1,6 @@
 package bj.formation.demoprojet.services.impl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bj.formation.demoprojet.dto.AgentCreationDTO;
 import bj.formation.demoprojet.dto.AgentResponseDTO;
@@ -11,10 +13,12 @@ import bj.formation.demoprojet.repositories.AgentGradeRepository;
 import bj.formation.demoprojet.repositories.AgentRepository;
 import bj.formation.demoprojet.repositories.GradeRepository;
 import bj.formation.demoprojet.services.AgentService;
+import bj.formation.demoprojet.services.impl.MailService;
 import bj.formation.demoprojet.services.ResourceNotFoundException;
 import bj.formation.demoprojet.utils.AppConstants;
 import bj.formation.demoprojet.utils.AppUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -38,23 +42,32 @@ public class AgentServiceImpl implements AgentService {
     private final AgentRepository agentRepository;
     private final GradeRepository gradeRepository;
     private final AgentGradeRepository agentGradeRepository;
+    private final MailService mailService;
 
 
     @Autowired
     private ModelMapper modelMapper;
+    private static final Logger log = LoggerFactory.getLogger(AgentServiceImpl.class);
 
 
     @Override
     public ResponseEntity<AgentCreationDTO> addAgent(AgentCreationDTO agentCreationDTO) {
+        log.info("Début de la création d'un agent avec les données : {}", agentCreationDTO);
 
         Grade grade = gradeRepository.findById(agentCreationDTO.getGradeCode())
-                .orElseThrow(() -> new ResourceNotFoundException("Grade not found"));
+                .orElseThrow(() -> {
+                    log.error("Grade introuvable avec l'ID : {}", agentCreationDTO.getGradeCode());
+                    return new ResourceNotFoundException("Grade not found");
+                });
+
+        log.info("Grade trouvé : {}", grade.getCode());
 
         Agent agent = new Agent();
         modelMapper.map(agentCreationDTO, agent);
 
         agent.setNom(agentCreationDTO.getNom());
         agent.setPrenom(agentCreationDTO.getPrenom());
+        agent.setEmail(agentCreationDTO.getEmail());
         agent.setDateNaissance(agentCreationDTO.getDateNaissance());
         agent.setIndice(agentCreationDTO.getIndice());
         agent.setSalaireBase((double) agentCreationDTO.getSalaireBase());
@@ -62,17 +75,34 @@ public class AgentServiceImpl implements AgentService {
         agent.setNbreEnfant(agentCreationDTO.getNbreEnfant());
         agent.setActif(false);
 
+        log.info("Agent avant sauvegarde : {}", agent);
+
         agent = agentRepository.save(agent);
+        log.info("Agent enregistré avec succès : ID={}, Matricule={}", agent.getMatricule(), agent.getMatricule());
 
         AgentGrade agentGrade = new AgentGrade();
         agentGrade.setAgent(agent);
         agentGrade.setGrade(grade);
         agentGrade.setDebut(LocalDate.now());
         agentGradeRepository.save(agentGrade);
+        log.info("Relation Agent-Grade enregistrée");
+
+        // Envoi de l'e-mail après enregistrement
+        String subject = "Bienvenue dans notre entreprise !";
+        String body = "<h1>Bienvenue, " + agent.getPrenom() + " " + agent.getNom() + "!</h1>"
+                + "<p>Votre matricule est <b>" + agent.getMatricule() + "</b>.</p>"
+                + "<p>Nous sommes ravis de vous accueillir.</p>";
+
+        try {
+            log.info("Tentative d'envoi d'e-mail à : {}", agent.getEmail());
+            mailService.sendEmail(agent.getEmail(), subject, body);
+            log.info("E-mail envoyé avec succès à : {}", agent.getEmail());
+        } catch (Exception e) {
+            log.error("Échec de l'envoi de l'e-mail à : {}", agent.getEmail(), e);
+        }
 
         return new ResponseEntity<>(agentCreationDTO, HttpStatus.CREATED);
     }
-
 
 
     public Agent getAgentByMatricule(String matricule) {

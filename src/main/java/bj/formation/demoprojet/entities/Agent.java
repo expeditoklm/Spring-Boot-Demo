@@ -18,6 +18,9 @@ public class Agent {
     @Column(name = "agt_prenom", nullable = false)
     private String prenom;
 
+    @Column(name = "agt_email", nullable = false)
+    private String email;
+
     @Column(name = "agt_date_naissance")
     private LocalDate dateNaissance;
 
@@ -50,6 +53,10 @@ public class Agent {
 
     public String getPrenom() {
         return prenom;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     public LocalDate getDateNaissance() {
@@ -91,6 +98,10 @@ public class Agent {
 
     public void setPrenom(String prenom) {
         this.prenom = prenom;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public void setDateNaissance(LocalDate dateNaissance) {

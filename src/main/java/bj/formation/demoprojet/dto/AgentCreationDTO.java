@@ -21,6 +21,11 @@ public class AgentCreationDTO {
         @NotBlank(message = "Le prénom est obligatoire")
         private String prenom;
 
+        @NotBlank(message = "Le prénom est obligatoire")
+        private String email;
+
+
+
         @NotNull(message = "La date de naissance est obligatoire")
         @Past(message = "La date de naissance doit être dans le passé")
         private LocalDate dateNaissance;

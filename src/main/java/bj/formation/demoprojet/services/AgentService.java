@@ -8,10 +8,8 @@ import org.springframework.http.ResponseEntity;
 
 public interface AgentService {
     ResponseEntity<AgentCreationDTO> addAgent(AgentCreationDTO agentCreationDTO);
-
     PagedResponse<AgentResponseDTO> getAllAgents(int page, int size);
     Agent getAgentByMatricule(String matricule);
-
 
 
 }

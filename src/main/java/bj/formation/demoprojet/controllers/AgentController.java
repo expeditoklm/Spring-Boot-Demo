@@ -2,6 +2,7 @@ package bj.formation.demoprojet.controllers;
 
 import bj.formation.demoprojet.dto.*;
 import bj.formation.demoprojet.entities.Agent;
+import bj.formation.demoprojet.services.AgentGradeService;
 import bj.formation.demoprojet.services.AgentService;
 import bj.formation.demoprojet.utils.AppConstants;
 import bj.formation.demoprojet.utils.AppUtils;
@@ -11,12 +12,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 @RestController
 @RequestMapping("/agents")
 @RequiredArgsConstructor
 public class AgentController {
     private final AgentService agentService;
-
+    private final AgentGradeService agentGradeService;
     @PostMapping
     public ResponseEntity<AgentCreationDTO> createAgent(@RequestBody @Valid AgentCreationDTO agentCreationDTO) {
             return agentService.addAgent(agentCreationDTO);
@@ -38,5 +42,10 @@ public class AgentController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+
+    @GetMapping("/lowest-indice-per-grade")
+    public List<Agent> getAgentsWithLowestIndiceForEachGrade() {
+        return agentGradeService.getAgentsWithLowestIndiceForEachGrade();
+    }
 
 }
